@@ -1,0 +1,289 @@
+---
+title: "Exercice 3"
+author: "Ousmane DIA & Abdoulaye Bara DIAW"
+date: "26/12/2020"
+output:
+  html_document: default
+  word_document: default
+---
+
+### Chargement des données
+```{r}
+data = read.table("E:/MASTER1/Semestre 2/Modele de Regression/Devoir1/data/data.txt", h=T)
+head(data)
+```
+
+
+### 1_ Création du vecteur Y et de la matrice X
+```{r}
+Y = data$Y             # création du vecteur Y
+X1 = data$X1
+X2 = data$X2
+X3 = data$X3
+X4 = data$X4
+X = cbind(X1,X2,X3,X4)  # création de la matrice X
+```
+
+
+### Représentation de Y en fonction de chacunes des autres variables
+```{r}
+par(mfrow = c(2, 2))
+plot(X1, Y, main = "Y en fonction de X1")
+plot(X2, Y, main = "Y en fonction de X2")
+plot(X3, Y, main = "Y en fonction de X3")
+plot(X4, Y, main = "Y en fonction de X4")
+```
+
+D'après les résultats du graphe ci-dessus nous observons qu'il y a une liaison linéaire assez nette entre la variable Y et la variable X2.
+Par contre nous ne pouvons pas en dire autant de la relation linéaire entre la variable Y et 
+les variables X1, X3 qui semble être très faible voire inexistante.
+
+
+### 2_ Régression linéaire de Y sur toutes les variables
+Effectuons la régression sur l'ensemble des variables explicatives.
+```{r}
+modele_initial = lm(Y ~ X1 + X2 + X3 + X4)
+summary(modele_initial)
+```
+Il semble que tous les coefficients des variables X1, X2, X3 et X4 sont signicatifs au seuil de 5%.
+Le R² vaut 0.7972. Cela veut dire que 79.72 % des fluctuations de la variable Y sont expliquées par la relation linéaire entre Y et les autres variables exogènes (X1, X2, X3, X4).
+Nous concluons par dire que la régression paraît acceptable.
+
+
+### 3_ Impact des variables sur le modèle
+
+#### 3_1 Réalisation de la régression en enlevant les variables une à une
+```{r}
+modele_sans_X1 = lm(Y ~ X2 + X3 + X4)
+summary(modele_sans_X1 )
+
+modele_sans_X2  = lm(Y ~ X1 + X3 + X4)
+summary(modele_sans_X2)
+
+modele_sans_X3  = lm(Y ~ X1 + X2 + X4)
+summary(modele_sans_X3)
+
+modele_sans_X4  = lm(Y ~ X1 + X2 + X3)
+summary(modele_sans_X4)
+```
+Il semble que le retrait de la variable X2 impacte négativement sur la qualité du modèle.
+
+
+#### 3_2 Représentation des résidus en fonction des variables explicatives
+```{r}
+residus_1 = resid(modele_sans_X1)
+residus_2 = resid(modele_sans_X2)
+residus_3 = resid(modele_sans_X3)
+residus_4 = resid(modele_sans_X4)
+#par(mfrow = c(2, 2))
+plot(X1, residus_1, main = "Résidus en fonction de X1")
+abline(h = 0, col = "red")
+
+plot(X2, residus_2, main = "Résidus en fonction de X2")
+abline(h = 0, col = "red")
+
+plot(X3, residus_3, main = "Résidus en fonction de X3")
+abline(h = 0, col = "red")
+
+plot(X4, residus_4, main = "Résidus en fonction de X4")
+abline(h = 0, col = "red")
+```
+
+En regardant les graphiques des résidus ci-dessus nous constatons qu'il apparaît un lien linéaire plus net avec la variable X3.
+
+
+### Nouveau modèle Z
+
+#### 4_1 Construction de la matrice Z contenant X1, X2, X3 et ln(X4).
+```{r}
+lnX4 = log(X4)
+Z = cbind(X1, X2, X3, lnX4)
+head(Z)
+```
+
+
+#### 4_2 Régression de Y sur les variables de Z
+```{r}
+
+regZ = lm(Y ~ Z)
+summary(regZ)
+```
+Nous pouvons remarquer que la variable X3 n'est pas signicative pour ce modèle.
+En comapraison aux résultats du modele-initial, nous constatons que le coefficient de détermination R² du modèle regZ (R²=0.9923) est plus grand que celui de modele_initial (R²=077972).
+Si on s'en tient à cela nous pouvons dire que le modèle regZ est meilleur que le modèle modele_initial.
+
+
+#### 4_3 Régression en retirant les variables une après une
+```{r}
+log1 = lm(Y ~ X1 + X2 + log(X4)) # retrait de X3
+summary(log1)
+
+log2 = lm(Y ~ X2 + X3 + log(X4)) # retrait de X1
+summary(log2)
+
+log3 = lm(Y ~ X1 + X3 + log(X4)) # retrait de X2
+summary(log3)
+
+log4 = lm(Y ~ X1 + X2 + X3)      # retrait de log(X4)
+summary(log4)
+```
+D'après les sorties ci-dessus, le modèle préférable est le modèle où on a retiré la variable X3.
+Le retrait de X3 ne fait pas augmenter l R² ajusté (égal à 0.9922 avant et après retrait de X3).
+
+
+### 5_ Détermination du meilleur modèle
+
+#### 5_1 Ajout de la variable log(X4) à la matrice X et création du nouveau modèle
+```{r}
+#X = cbind(X1, X2, X3, X4, lnX4)
+X = cbind(rep(1, length(X1)), X1, X2, X3 , lnX4)
+head(X)
+
+new_model = lm(Y ~ X)
+```
+
+
+#### 5_2 Le critère de Akaike
+```{r}
+AIC_regZ = AIC(regZ)
+AIC_regZ
+AIC_new_model = AIC(new_model)
+AIC_new_model
+```
+Le meilleur modèle est celui qui a le plus faible critère d'Akaike (AIC).
+Nous constatons que l'AIC de de la régression de Y sur les variables de Z est égal à 5163.634 et l'AIC de la régression de Y sur la matrice X contenant X1, X2, X3, X4 et lnX4 est égal à 5165.627.
+Nous pouvons donc dire que le meilleur modèle est celui de la régression de Y sur les variables de Z.
+
+
+###  6_ On décide de conserver le modèle Y = β0 + β1∗X1 + β2∗X2 + β3∗ln(X4) + ε 
+#### 6_1 Etablissons le modèle
+
+```{r}
+regression = lm(Y ~ X1 + X2 + lnX4)
+summary(regression)
+```
+
+
+#### 6_2 Test de normalité des résidus
+
+```{r}
+residus_regression = resid(regression)           # récupération des résidus du modèle regZ
+```
+
+Pour effectuer le test de normalité des résidus nous utilisons le test de Shapiro-Wilk. 
+L'hypothèse nulle de ce test est que "la distribution des résidus est normale". Si le test est significatif (p-valeur <= 0.05), la distribution est non-normale.
+
+```{r}
+shapiro.test(residus_regression)
+
+```
+
+Nous voyons que la p-valeur (p-value = 0.6728) est largement supérieure à 0.05, elle est donc non significative : les résidus suivent une distribution normale.
+
+
+### 7_ Test de l'hypothèse d'homoscédasticité
+
+Pour tester l'hypothèse d'homoscédasticité des résidus, nous procédons par la vérication graphique
+en représentant le nuage de points des résidus en fonction des variables endogènes. 
+Si les résidus ont une variance constante, le nuage doit se répartir uniformément de part et d'autre de l'axe des abscisses.
+```{r}
+plot(residus_regression)                   # représentation graphique des résidus
+abline(h = 0, col = "red")
+  
+```
+
+Nous voyons que le nuage semble être réparti uniformément de part et d'autre de l'axe des abscisses. Donc les résidus sont homoscédastiques.
+
+
+### 8_ Intervalle de confiance à 95%, puis à 99%, pour chacun des paramètres.
+
+#### 8_1 Intervalle de confiance à 95%
+
+```{r}
+confint(regression, level = 0.95)
+```
+
+Nous pouvons être confiant à 95% que les valeurs de les valeurs de β0, β1, β2, β3 se situent respectivement dans les intervalles [42.173670  59.968901], [1.975552   2.051540], [2.994295   3.068526], [295.208047 302.451657].
+
+
+#### 8_2 Intervalle de confiance à 99%
+
+```{r}
+confint(regression, level = 0.99)
+```
+Nous pouvons être confiant à 99% que les valeurs de les valeurs de β0, β1, β2, β3, β4 se situent respectivement dans les intervalles [39.361318  62.781253], [1.963543   2.063549], [2.982563   3.080258], [294.063269 303.596434].
+
+
+#### 8_3 Vérifions que l'on obtient bien le même intervalle de confiance à 95% pour β1 en utilisant les formules du cours
+
+
+```{r}
+X = cbind(rep(1, length(X1)), X1, X2, lnX4)       # Matrice X
+
+X_prime_X = t(X) %*% X                            # Matrice X'X
+
+X_prime_X_moins1 = solve(X_prime_X)               # Matrice (X'X)-1
+
+X_prime_Y = t(X) %*% Y                            # Vecteur X'Y
+
+Y_prime_Y =  t(Y) %*% Y                           # Valeur de Y'Y
+
+beta_chap = X_prime_X_moins1 %*% X_prime_Y        # Vecteur beta chapeau
+
+beta_chap_prime = t(beta_chap)                    # Vecteur beta_chap-prime
+
+ddl =  496                               # Nbr de degrés de liberté 500-3-1 ou bien 496 degrees of freedom dans le tableau des estimations
+
+
+sigma_chap_carre = ( Y_prime_Y - (beta_chap_prime) %*% X_prime_Y ) / ddl    # Calcul de sigma chapeau carré
+
+
+sigma_chap = sqrt(sigma_chap_carre)          # que l'on obtient par le Residual standard error:42 des résultat du tableau des estimations
+
+
+quantile = 1.96
+
+deuxieme_composante_diagonale = X_prime_X_moins1[2,2]
+
+borne_inf = beta_chap[2,1] - (quantile * sigma_chap * sqrt(deuxieme_composante_diagonale))  # borne inférieure de l'intervalle
+borne_inf
+
+borne_sup = beta_chap[2,1] + (quantile * sigma_chap * sqrt(deuxieme_composante_diagonale))  # borne supérieure de l'intervalle
+borne_sup
+```
+Nous retrouvons ainsi les valeurs de l'intervalle à 95%  pour β1 
+
+
+### 9_1 Donnons une prévision et un intervalle de confiance (ou plutôt de pari) à 95% pour Y si X1 = X2 = lnX4 = 200
+
+```{r}
+predict(regression, data.frame(X1 = 200, X2 = 200, lnX4 = 200), interval = "prediction", level = 0.95)
+```
+La valeur prédite de Y est 60826.03 et l'intervalle est [60105.3  61546.77]
+
+
+### 9_2 Retrouvons par le calcul, avec les formules du cours, l'intervalle obtenu
+
+```{r}
+df = data.frame(X1 = 200, X2 = 200, lnX4 = 200)
+
+x_de_nplus1 = t(cbind(1, df))
+
+x_prime_de_nplus1 = t(x_de_nplus1)
+
+born_inf = x_prime_de_nplus1 %*% beta_chap - quantile * sigma_chap * sqrt(1 + x_prime_de_nplus1 %*% X_prime_X_moins1 %*% x_de_nplus1)
+born_inf
+
+born_sup = x_prime_de_nplus1 %*% beta_chap + quantile * sigma_chap * sqrt(1 + x_prime_de_nplus1 %*% X_prime_X_moins1 %*% x_de_nplus1)
+born_sup
+                                                                      
+```
+Nous retrouvons ainsi les valeurs de l'intervalle.
+
+
+### 9_3 Retrouvons le résultat obtenu lorsque l'on choisit l'option interval = "confidence".
+
+```{r}
+predict(regression, data.frame(X1 = 200, X2 = 200, lnX4 = 200), interval = "confidence", level = 0.95)
+```
+On obtient l'intervalle [60110.04  61542.03]

@@ -1,0 +1,102 @@
+---
+author: "Ousman DIA & Abdoulaye Bara DIAW"
+title: "Exercice 4"
+output: html_document
+---
+
+### Importation des données
+```{r}
+mesdonnees = read.table("E:/MASTER1/Semestre 2/Modele de Regression/Devoir1/data/dataR.txt", h=T)
+
+head(mesdonnees)
+```
+
+
+#### Matrice des variables explicatives 
+
+```{r}
+Y  = mesdonnees$Y
+X1 = mesdonnees$X1
+X2 = mesdonnees$X2
+X3 = mesdonnees$X3
+X4 = mesdonnees$X4
+X5 = mesdonnees$X5
+X  = cbind(X1,X2,X3,X4,X5)
+```
+
+##### 1_ Calculons la matrice de corrélations des variables explicatives et créeons une matrice 5 × 5 dont le terme d’indice (i, j) est la p-valeur associée au test de nullité du coefficient de corrélation (de Pearson) entre Xi et Xj .
+
+
+```{r}
+library(Hmisc)
+mesdonnees.cor = rcorr(X, type=c("pearson"))
+mesdonnees.cor
+```
+
+Comme résultat, la fonction rcorr() renvoie une liste avec les éléments suivants : 
+la 1ère matrice qui est la matrice de corrélation. 
+n : le nombre d'observations
+P : matrice 5 × 5 dont le terme d’indice (i, j) est la p-valeur associée au test de nullité du coefficient de corrélation (de Pearson) entre Xi et Xj.
+Au vu de ces résultats nous pouvons craindre un problème de multicolinéarité entre la variable X1 et X2.
+
+
+### 2_ Sélection de variables avec le critère BIC
+
+```{r}
+reg = lm(Y ~ . , data=mesdonnees)
+summary(reg)
+```
+
+
+```{r}
+n = length(X1) 
+step  = stepAIC(reg, direction = "backward", k = log(n))
+
+```
+
+D'après les résultats ci-dessus, il faudrait conserver les variables X1, X2, X3, X5. 
+
+#### 3_1 Représentons Y en fonction des valeurs prédites par le modèle
+```{r}
+predictions = predict(reg)
+plot(predictions, Y)
+```
+
+### 3_2 Représentons les résidus studentisés
+```{r}
+resid_student = rstudent(reg)
+plot(resid_student)
+#abline(h = 2, col = 2)
+#abline(h = -2, col = 2)
+```
+
+Au vu de cette graphique nous remarquons qu'il y a une valeur qui se démarque totalement des autres (c'est  la valeur qui est en bas entre 100 et 200).
+
+
+### 4_ Les éventuelles valeurs anormales
+```{r}
+plot(reg, 4)
+cooks.distance(reg)[cooks.distance(reg) > 1]
+
+```
+
+
+```{r}
+reg2 = lm(Y ~ . , data=mesdonnees, subset = - c(160))
+summary(reg2)
+```
+
+
+#### 4_ Recherchons le meilleur modèle
+```{r}
+n = length(X1) 
+step  = stepAIC(reg2, direction = "backward", k = log(n))
+```
+
+
+```{r}
+best_model = lm(Y ~ X1 + X2 + X3)
+summary(best_model)
+```
+
+
